@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete the Word</title>
+    <title>Complete</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -22,13 +22,14 @@
             gap: 5px;
         }
         .options button {
-            font-size: 24px;
+            font-size: calc(16px + 1vw); /* Responsive font size */
             padding: 10px;
             margin: 5px;
             border: 2px solid #ccc;
             cursor: pointer;
             border-radius: 10px;
-            width: 50px;
+            flex: 1 1 calc(20% - 10px); /* 5 buttons per row */
+            max-width: 50px;
         }
         .correct {
             background-color: #4CAF50;
@@ -60,14 +61,6 @@
         #incorrect-count::before {
             content: '👎 ';
         }
-        @keyframes correct-animation {
-            from { transform: scale(1.5); }
-            to { transform: scale(1); }
-        }
-        @keyframes incorrect-animation {
-            from { transform: scale(0.5); }
-            to { transform: scale(1); }
-        }
         .celebration {
             animation: celebrate 1s ease-in-out;
         }
@@ -76,10 +69,28 @@
             50% { transform: scale(1.2); }
             100% { transform: scale(1); }
         }
+        @media (max-width: 768px) {
+            .options button {
+                font-size: calc(14px + 1vw); /* Smaller font size for smaller screens */
+                max-width: 40px;
+            }
+        }
+        .flower {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #FFEB3B;
+            border-radius: 50%;
+            animation: float 1s linear infinite;
+        }
+        @keyframes float {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-50px); opacity: 0; }
+        }
     </style>
 </head>
 <body>
-    <h1>complete</h1>
+    <h1>Complete</h1>
     <div id="correct-count">0</div>
     <div id="incorrect-count">0</div>
     <div id="quiz-container">
@@ -190,11 +201,11 @@
             'key': 'مفتاح',
             'kite': 'طائرة ورقية',
             'quite': 'هادئ',
-            'Egypt': 'مصر',
-            'Luxor': 'الأقصر',
-            'Aswan': 'أسوان',
-            'Port Said': 'بورسعيد',
-            'Alexandria': 'الإسكندرية',
+            'egypt': 'مصر',
+            'luxor': 'الأقصر',
+            'aswan': 'أسوان',
+            'port Said': 'بورسعيد',
+            'alexandria': 'الإسكندرية',
             'kick': 'ركل',
             'skip': 'تخطى',
             'swim': 'سباحة',
@@ -237,16 +248,25 @@
         let incorrectCount = 0;
         let currentQuestion = null;
         let answered = false;
+        let usedWords = new Set();
 
         function getRandomQuestions() {
-            const shuffled = words.sort(() => 0.5 - Math.random());
+            let availableWords = words.filter(word => !usedWords.has(word));
+            if (availableWords.length < 20) {
+                usedWords.clear();
+                availableWords = words.slice();
+            }
+            const shuffled = availableWords.sort(() => 0.5 - Math.random());
             return shuffled.slice(0, 20);
         }
 
-        const selectedWords = getRandomQuestions();
+        let selectedWords = getRandomQuestions();
 
         function generateQuestion(word) {
-            const randomIndex = Math.floor(Math.random() * word.length);
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * word.length);
+            } while (word[randomIndex] === ' '); // Ensure we don't select a space
             const missingChar = word[randomIndex];
             const questionWord = word.substring(0, randomIndex) + '_' + word.substring(randomIndex + 1);
             return {
@@ -269,7 +289,7 @@
             document.getElementById('word').innerHTML = currentQuestion.word;
             document.getElementById('translation').innerHTML = translations[word];
 
-            const alphabet = 'abcdefghijklmnopqrstuvwxyz '.split('');
+            const alphabet = 'abcdefghijklmnopqrstuvwxyz'.split(''); // Removed space from alphabet
             const optionsContainer = document.querySelector('.options');
             optionsContainer.innerHTML = ''; // Clear previous options
 
@@ -299,6 +319,7 @@
                 updateWordDisplay(currentQuestion.correct, 'correct');
                 document.getElementById('correct-count').innerText = correctCount;
                 speakWord(selectedWords[currentQuestionIndex]);
+                showFlowers(); // Show flowers on correct answer
             } else {
                 buttons[index].classList.add('incorrect');
                 incorrectCount++;
@@ -327,6 +348,19 @@
             speechSynthesis.speak(utterance);
         }
 
+        function showFlowers() {
+            const colors = ['#FFEB3B', '#FFC107', '#FF9800', '#FF5722', '#E91E63'];
+            for (let i = 0; i < 20; i++) {
+                const flower = document.createElement('div');
+                flower.classList.add('flower');
+                flower.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                flower.style.left = `${Math.random() * 100}%`;
+                flower.style.bottom = `${Math.random() * 20 + 10}px`;
+                document.body.appendChild(flower);
+                setTimeout(() => flower.remove(), 1000); // Remove flower after 1 second
+            }
+        }
+
         document.getElementById('restart-btn').addEventListener('click', () => {
             currentQuestionIndex = 0;
             score = 0;
@@ -337,6 +371,8 @@
             document.getElementById('restart-btn').style.display = 'none';
             document.getElementById('correct-count').innerText = correctCount;
             document.getElementById('incorrect-count').innerText = incorrectCount;
+            usedWords.add(...selectedWords); // Add the selected words to the used words set
+            selectedWords = getRandomQuestions(); // Get a new set of random questions
             loadQuestion();
         });
 
