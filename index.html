@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete the Word</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 5px;
+            position: relative;
+        }
+        .word-placeholder {
+            font-size: 92px;
+            margin: 10px 0;
+        }
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 5px;
+        }
+        .options button {
+            font-size: 24px;
+            padding: 10px;
+            margin: 5px;
+            border: 2px solid #ccc;
+            cursor: pointer;
+            border-radius: 10px;
+            width: 50px;
+        }
+        .correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .incorrect {
+            background-color: #f44336;
+            color: white;
+        }
+        #correct-count, #incorrect-count {
+            position: absolute;
+            top: 5px;
+            font-size: 24px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-radius: 5px;
+        }
+        #correct-count {
+            right: 10px;
+            color: green;
+        }
+        #incorrect-count {
+            left: 10px;
+            color: red;
+        }
+        #correct-count::before {
+            content: '👍 ';
+        }
+        #incorrect-count::before {
+            content: '👎 ';
+        }
+        @keyframes correct-animation {
+            from { transform: scale(1.5); }
+            to { transform: scale(1); }
+        }
+        @keyframes incorrect-animation {
+            from { transform: scale(0.5); }
+            to { transform: scale(1); }
+        }
+        .celebration {
+            animation: celebrate 1s ease-in-out;
+        }
+        @keyframes celebrate {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <h1>complete</h1>
+    <div id="correct-count">0</div>
+    <div id="incorrect-count">0</div>
+    <div id="quiz-container">
+        <div id="word" class="word-placeholder"></div>
+        <div id="translation" class="word-placeholder"></div>
+        <div class="options">
+            <!-- Alphabet buttons will be generated here -->
+        </div>
+    </div>
+    <div id="score-container"></div>
+    <button id="restart-btn" style="display:none;">Start New Quiz</button>
+
+    <script>
+        const words = [
+            'bus', 'door', 'hello', 'good bye', 'shake hands', 'play', 'blue', 'orange', 'pink', 'yellow', 'purple', 
+            'red', 'black', 'green', 'ruler', 'pen', 'pencil', 'pencil case', 'sharpener', 'bag', 'book', 'school', 
+            'count', 'birthday', 'cake', 'candle', 'card', 'balloon', 'oil', 'olives', 'thank you', 'father', 
+            'grandfather', 'grandmother', 'sister', 'brother', 'family', 'flag', 'tree', 'television', 'flute', 
+            'guitar', 'piano', 'triangle', 'doll', 'dog', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 
+            'eight', 'nine', 'ten', 'home', 'bathroom', 'bedroom', 'living room', 'garden', 'circle', 'square', 
+            'star', 'arrow', 'rectangle', 'eat', 'go', 'visit', 'like', 'big', 'small', 'camel', 'pyramids', 'sphinx', 
+            'king Tut', 'queen nefertiti', 'stone', 'key', 'kite', 'quite', 'egypt', 'luxor', 'aswan', 'port Said', 
+            'alexandria', 'kick', 'skip', 'swim', 'throw', 'dig', 'run', 'umbrella', 'insect', 'ink', 'beach', 'box', 
+            'table', 'computer', 'flower', 'broom', 'bin', 'clown', 'cassette', 'stand up', 'sit down', 'look here', 
+            'sing a song', 'read the card', 'telescope', 'planet', 'spaceship', 'eye', 'see', 'ear', 'hear', 'nose', 
+            'smell', 'hand', 'touch'
+        ];
+
+        const translations = {
+            'bus': 'حافلة',
+            'door': 'باب',
+            'hello': 'مرحباً',
+            'good bye': 'وداعاً',
+            'shake hands': 'مصافحة',
+            'play': 'لعب',
+            'blue': 'أزرق',
+            'orange': 'برتقالي',
+            'pink': 'وردي',
+            'yellow': 'أصفر',
+            'purple': 'أرجواني',
+            'red': 'أحمر',
+            'black': 'أسود',
+            'green': 'أخضر',
+            'ruler': 'مسطرة',
+            'pen': 'قلم',
+            'pencil': 'قلم رصاص',
+            'pencil case': 'علبة أقلام',
+            'sharpener': 'مبراة',
+            'bag': 'حقيبة',
+            'book': 'كتاب',
+            'school': 'مدرسة',
+            'count': 'عدّ',
+            'birthday': 'عيد ميلاد',
+            'cake': 'كعكة',
+            'candle': 'شمعة',
+            'card': 'بطاقة',
+            'balloon': 'بالون',
+            'oil': 'زيت',
+            'olives': 'زيتون',
+            'thank you': 'شكراً',
+            'father': 'أب',
+            'grandfather': 'جد',
+            'grandmother': 'جدة',
+            'sister': 'أخت',
+            'brother': 'أخ',
+            'family': 'عائلة',
+            'flag': 'علم',
+            'tree': 'شجرة',
+            'television': 'تلفاز',
+            'flute': 'ناي',
+            'guitar': 'غيتار',
+            'piano': 'بيانو',
+            'triangle': 'مثلث',
+            'doll': 'دمية',
+            'dog': 'كلب',
+            'one': 'واحد',
+            'two': 'اثنان',
+            'three': 'ثلاثة',
+            'four': 'أربعة',
+            'five': 'خمسة',
+            'six': 'ستة',
+            'seven': 'سبعة',
+            'eight': 'ثمانية',
+            'nine': 'تسعة',
+            'ten': 'عشرة',
+            'home': 'منزل',
+            'bathroom': 'حمام',
+            'bedroom': 'غرفة نوم',
+            'living room': 'غرفة المعيشة',
+            'garden': 'حديقة',
+            'circle': 'دائرة',
+            'square': 'مربع',
+            'star': 'نجمة',
+            'arrow': 'سهم',
+            'rectangle': 'مستطيل',
+            'eat': 'أكل',
+            'go': 'اذهب',
+            'visit': 'زيارة',
+            'like': 'أحب',
+            'big': 'كبير',
+            'small': 'صغير',
+            'camel': 'جمل',
+            'pyramids': 'أهرامات',
+            'sphinx': 'أبو الهول',
+            'king Tut': 'الملك توت',
+            'queen Nefertiti': 'الملكة نفرتيتي',
+            'stone': 'حجر',
+            'key': 'مفتاح',
+            'kite': 'طائرة ورقية',
+            'quite': 'هادئ',
+            'Egypt': 'مصر',
+            'Luxor': 'الأقصر',
+            'Aswan': 'أسوان',
+            'Port Said': 'بورسعيد',
+            'Alexandria': 'الإسكندرية',
+            'kick': 'ركل',
+            'skip': 'تخطى',
+            'swim': 'سباحة',
+            'throw': 'رمى',
+            'dig': 'حفر',
+            'run': 'ركض',
+            'umbrella': 'مظلة',
+            'insect': 'حشرة',
+            'ink': 'حبر',
+            'beach': 'شاطئ',
+            'box': 'صندوق',
+            'table': 'طاولة',
+            'computer': 'حاسوب',
+            'flower': 'زهرة',
+            'broom': 'مكنسة',
+            'bin': 'سلة',
+            'clown': 'مهرج',
+            'cassette': 'شريط',
+            'stand up': 'قف',
+            'sit down': 'اجلس',
+            'look here': 'انظر هنا',
+            'sing a song': 'غني أغنية',
+            'read the card': 'اقرأ البطاقة',
+            'telescope': 'تلسكوب',
+            'planet': 'كوكب',
+            'spaceship': 'سفينة فضاء',
+            'eye': 'عين',
+            'see': 'يرى',
+            'ear': 'أذن',
+            'hear': 'يسمع',
+            'nose': 'أنف',
+            'smell': 'يشم',
+            'hand': 'يد',
+            'touch': 'يلمس'
+        };
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let currentQuestion = null;
+        let answered = false;
+
+        function getRandomQuestions() {
+            const shuffled = words.sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, 20);
+        }
+
+        const selectedWords = getRandomQuestions();
+
+        function generateQuestion(word) {
+            const randomIndex = Math.floor(Math.random() * word.length);
+            const missingChar = word[randomIndex];
+            const questionWord = word.substring(0, randomIndex) + '_' + word.substring(randomIndex + 1);
+            return {
+                word: questionWord,
+                correct: missingChar,
+                index: randomIndex
+            };
+        }
+
+        function loadQuestion() {
+            if (currentQuestionIndex === selectedWords.length) {
+                document.getElementById('quiz-container').style.display = 'none';
+                document.getElementById('score-container').innerHTML = `<div class="score">Score: ${score}/${selectedWords.length}</div>`;
+                document.getElementById('restart-btn').style.display = 'block';
+                return;
+            }
+
+            const word = selectedWords[currentQuestionIndex];
+            currentQuestion = generateQuestion(word);
+            document.getElementById('word').innerHTML = currentQuestion.word;
+            document.getElementById('translation').innerHTML = translations[word];
+
+            const alphabet = 'abcdefghijklmnopqrstuvwxyz '.split('');
+            const optionsContainer = document.querySelector('.options');
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            alphabet.forEach((char, index) => {
+                const button = document.createElement('button');
+                button.innerHTML = char;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+
+            answered = false; // Reset answered flag
+        }
+
+        function checkAnswer(index) {
+            if (answered) return; // Exit if already answered
+
+            const buttons = document.querySelectorAll('.options button');
+            answered = true;
+
+            const selectedChar = buttons[index].innerHTML;
+            buttons.forEach(button => button.disabled = true); // Disable all buttons
+
+            if (selectedChar === currentQuestion.correct) {
+                buttons[index].classList.add('correct');
+                correctCount++;
+                score += 1; // Increase score by 1 for correct answer
+                updateWordDisplay(currentQuestion.correct, 'correct');
+                document.getElementById('correct-count').innerText = correctCount;
+                speakWord(selectedWords[currentQuestionIndex]);
+            } else {
+                buttons[index].classList.add('incorrect');
+                incorrectCount++;
+                document.getElementById('incorrect-count').innerText = incorrectCount;
+            }
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                loadQuestion();
+            }, currentQuestionIndex === 0 ? 3000 : 1000); // Wait 3 seconds for the first question and 1 second for the others
+        }
+
+        function updateWordDisplay(char, status) {
+            const wordElement = document.getElementById('word');
+            const wordText = wordElement.innerHTML;
+            const newWord = wordText.replace('_', char);
+            wordElement.innerHTML = newWord;
+            wordElement.classList.add(status, 'celebration');
+            setTimeout(() => {
+                wordElement.classList.remove(status, 'celebration');
+            }, 500); // Remove the status class after 0.5 seconds
+        }
+
+        function speakWord(word) {
+            const utterance = new SpeechSynthesisUtterance(word);
+            speechSynthesis.speak(utterance);
+        }
+
+        document.getElementById('restart-btn').addEventListener('click', () => {
+            currentQuestionIndex = 0;
+            score = 0;
+            correctCount = 0;
+            incorrectCount = 0;
+            document.getElementById('quiz-container').style.display = 'block';
+            document.getElementById('score-container').innerHTML = '';
+            document.getElementById('restart-btn').style.display = 'none';
+            document.getElementById('correct-count').innerText = correctCount;
+            document.getElementById('incorrect-count').innerText = incorrectCount;
+            loadQuestion();
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadQuestion();
+        });
+    </script>
+</body>
+</html>
